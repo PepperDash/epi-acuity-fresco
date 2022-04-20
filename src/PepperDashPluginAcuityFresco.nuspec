@@ -2,22 +2,22 @@
 <package >
   <metadata>
     <!-- Update ID with a plugin ID representative of the plugin being built-->
-    <id>EssentialsPluginTemplate</id>
+    <id>PepperDash.Essentials.Plugin.Lighting.Acuity.Fresco</id>
     <version>1.0.0</version>
     <!-- Update Title with the plugin name that users will see-->
-    <title>Essentials Plugin Template</title>
+    <title>PepperDash Essentials Acuity Fresco Lighting Plugin</title>
     <authors>PepperDash Technologies</authors>
     <owners>pepperdash</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <!-- Update projectUrl with the actual URL of the plugin repo-->
-    <projectUrl>https://github.com/PepperDash-Engineering/template-essentials_plugin</projectUrl>
-    <copyright>Copyright 2020</copyright>
+    <projectUrl>https://github.com/PepperDash-Engineering/</projectUrl>
+    <copyright>Copyright 2022</copyright>
     <!-- Update description-->
-    <description>Essentials Plugin Template is a Crestron SIMPL# plugin used with SIMPL# Pro applications such as Essentials to expose functionality in SIMPL Windows programs using Bridges.</description>
+    <description>PepeprDash Essentials Acuity Fresco Lighting Plugin to expose functionality in SIMPL Windows programs using Bridges.</description>
     <tags>crestron 3series 4series</tags>
     <!-- Update repository url with the actual URL of the plugin repo-->
-    <repository type="git" url="https://github.com/PepperDash-Engineering/template-essentials_plugin"/>
+    <repository type="git" url="https://github.com/PepperDash-Engineering/"/>
   </metadata>
     <files>
       <file src="**" target="lib\net35"/>

@@ -1,0 +1,96 @@
+{
+	"system_url": "",
+	"template": {
+		"info": {
+			"comment": "",
+			"requiredControlSofwareVersion": "",
+			"systemType": "huddle",
+			"lastModifiedDate": "2018-07-09T20:00:47.873Z",
+			"lastUid": 23,
+			"processorType": "rmc3"
+		},
+		"devices": [
+			{
+				"key": "processor",
+				"group": "processor",
+				"uid": 0,
+				"supportsCompliance": true,
+				"type": "rmc3",
+				"properties": {},
+				"name": "RMC3"
+			},
+			{
+				"key": "lights-1",
+				"name": "Acuity Fresco Lighting Scenes",
+				"type": "acuityfresco",
+				"group": "pluginDevices",
+				"properties": {
+					"control": {
+						"method": "com",
+						"controlPortDevKey": "processor",
+						"controlPortNumber": 1,
+						"comParams": {
+							"baudRate": 115200,
+							"dataBits": 8,
+							"stopBits": 1,
+							"parity": "None",
+							"protocol": "RS232",
+							"hardwareHandshake": "None",
+							"softwareHandshake": "None"
+						}
+					},
+					"pollTimeMs": 30000,
+					"warningTimeoutMs": 180000,
+					"errorTimeoutMs": 300000,
+					"scenes": [
+						{
+							"name": "Scene 1",
+							"id": 1,
+							"roomId": "A",
+							"level": 100
+						},
+						{
+							"name": "Scene 2",
+							"id": 5,
+							"roomId": "B",
+							"level": 50
+						},
+						{
+							"name": "Scene 3",
+							"id": 36,
+							"roomId": "X",
+							"level": 0
+						}
+					]
+				}
+			},
+			{
+				"key": "lights-1-bridge",
+				"uid": 11,
+				"name": "Example Plugin Bridge",
+				"group": "api",
+				"type": "eiscApiAdvanced",
+				"properties": {
+					"control": {
+						"tcpSshProperties": {
+							"address": "127.0.0.2",
+							"port": 0
+						},
+						"ipid": "B1"
+					},
+					"devices": [
+						{
+							"deviceKey": "lights-1",
+							"joinStart": 1
+						}
+					]
+				}
+			}
+		],
+		"rooms": [],
+		"sourceLists": {},
+		"tieLines": []
+	},
+	"template_url": "",
+	"system": {}
+}
