@@ -14,7 +14,7 @@
     <projectUrl>https://github.com/PepperDash-Engineering/epi-lighting-acuity-freso</projectUrl>
     <copyright>Copyright 2022</copyright>
     <!-- Update description-->
-    <description>PepeprDash Essentials Acuity Fresco Lighting Plugin to expose functionality in SIMPL Windows programs using Bridges.</description>
+    <description>PepperDash Essentials Acuity Fresco Lighting Plugin to expose functionality in SIMPL Windows programs using Bridges.</description>
     <tags>crestron 3series 4series</tags>
     <!-- Update repository url with the actual URL of the plugin repo-->
     <repository type="git" url="https://github.com/PepperDash-Engineering/epi-lighting-acuity-freso"/>
