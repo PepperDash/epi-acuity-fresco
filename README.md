@@ -2,7 +2,7 @@
 
 # IN DEVELOPMENT
 
-The plugin is current in development
+The plugin is currently in development
 
 # Acuity Fresco Lighting Plugin
 
