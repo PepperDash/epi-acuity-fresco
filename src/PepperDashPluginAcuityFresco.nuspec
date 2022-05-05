@@ -11,13 +11,13 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <!-- Update projectUrl with the actual URL of the plugin repo-->
-    <projectUrl>https://github.com/PepperDash-Engineering/epi-lighting-acuity-freso</projectUrl>
+    <projectUrl>https://github.com/PepperDash/epi-lighting-acuity-fresco</projectUrl>
     <copyright>Copyright 2022</copyright>
     <!-- Update description-->
     <description>PepperDash Essentials Acuity Fresco Lighting Plugin to expose functionality in SIMPL Windows programs using Bridges.</description>
     <tags>crestron 3series 4series</tags>
-    <!-- Update repository url with the actual URL of the plugin repo-->
-    <repository type="git" url="https://github.com/PepperDash-Engineering/epi-lighting-acuity-freso"/>
+    <!-- Update repository url with the actual URL of the plugin repo-->    
+    <repository type="git" url="https://github.com/PepperDash/epi-lighting-acuity-fresco"/>
   </metadata>
     <files>
       <file src="**" target="lib\net35"/>
