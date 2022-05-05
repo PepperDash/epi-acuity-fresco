@@ -15,7 +15,7 @@ namespace PepperDashPluginAcuityFresco
     public class AcuityFrescoDevice : LightingBase
 	{
 		private const string CommsDelimiter = "\n";
-	    private readonly List<AcuityFrescoScene> _scenes;
+	    public readonly List<AcuityFrescoScene> _scenes;
 		private readonly IBasicCommunication _comms;
 		private readonly GenericCommunicationMonitor _commsMonitor;        
 
@@ -153,6 +153,9 @@ namespace PepperDashPluginAcuityFresco
 		/// <param name="bridge"></param>
 		public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
 		{
+            Debug.Console(DebugLevel, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
+            Debug.Console(DebugLevel, this, "Linking to Bridge Type {0}", GetType().Name);
+
 		    LinkLightingToApi(this, trilist, joinStart, joinMapKey, bridge);
 		}		
 
