@@ -1,11 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
-using PepperDash.Essentials.Core.Lighting;
 
 
 namespace PepperDashPluginAcuityFresco
@@ -56,13 +54,15 @@ namespace PepperDashPluginAcuityFresco
             {
                 if (_activeScene == value) return;
                 _activeScene = value;
-                
+
                 SceneSelectFeedback.FireUpdate();
 
-                for (var i = 0; i <= Scenes.Count; i++)
+                var index = 0;
+                foreach (var scene in Scenes)
                 {
-                    Scenes[i].IsActive = (i == _activeScene);
-                    SceneSelectDirectFeebacks[i].FireUpdate();    
+                    scene.IsActive = (index == _activeScene);
+                    SceneSelectDirectFeebacks[index].FireUpdate();
+                    index++;
                 }
             }
         }
@@ -97,9 +97,12 @@ namespace PepperDashPluginAcuityFresco
             SceneSelectDirectFeebacks = new Dictionary<int, BoolFeedback>();
             SceneSelectFeedback = new IntFeedback(() => (int)_activeScene);
 
+            InitializeSceneSelectDirectFeedback(Scenes);
+
             _comms = comms;
             _commsMonitor = new GenericCommunicationMonitor(this, _comms, config.PollTimeMs, config.WarningTimeoutMs, config.ErrorTimeoutMs, Poll);
-            DeviceManager.AddDevice(_commsMonitor);
+            _commsMonitor.StatusChange += OnCommunicationMonitorStatusChange;
+            //DeviceManager.AddDevice(_commsMonitor);
 
             OnlineFeedback = _commsMonitor.IsOnlineFeedback;
             CommunicationMonitorFeedback = new IntFeedback(() => (int)_commsMonitor.Status);
@@ -124,36 +127,39 @@ namespace PepperDashPluginAcuityFresco
         /// This method will be called when the device is built.
         /// </summary>
         /// <returns></returns>
-        //public override bool CustomActivate()
-        //{
-        //    // Essentials will handle the connect method to the device                       
-        //    _comms.Connect();
-        //    // Essentialss will handle starting the comms monitor
-        //    _commsMonitor.Start();
-
-        //    return base.CustomActivate();
-        //}
-
-        /// <summary>
-        /// Initialize plugin device
-        /// </summary>
-        public override void Initialize()
+        public override bool CustomActivate()
         {
             // Essentials will handle the connect method to the device                       
             _comms.Connect();
             // Essentialss will handle starting the comms monitor
             _commsMonitor.Start();
+
+            return base.CustomActivate();
+        }
+
+        /// <summary>
+        /// Initialize plugin device
+        /// </summary>
+        //public override void Initialize()
+        //{
+        //    // Essentials will handle the connect method to the device                       
+        //    _comms.Connect();
+        //    _commsMonitor.StatusChange +=
+        //        (sender, args) => Debug.Console(DebugLevel, this, "Communication monitor state: {0}", _commsMonitor.Status);
+        //    // Essentialss will handle starting the comms monitor
+        //    _commsMonitor.Start();
+        //}
+
+        private void OnCommunicationMonitorStatusChange(object sender, MonitorStatusChangeEventArgs args)
+        {
+            Debug.Console(DebugLevel, this, "Communication Status: ({0}) {1}, {2}", args.Status, args.Status.ToString(), args.Message);
         }
 
         private void OnSocketConnectionChange(object sender, GenericSocketStatusChageEventArgs args)
         {
-            Debug.Console(DebugLevel, this, "Socket Status: {0}", args.Client.ClientStatus.ToString());
+            Debug.Console(DebugLevel, this, "Socket Status: ({0}) {1}", args.Client.ClientStatus, args.Client.ClientStatus.ToString());
 
-            if (OnlineFeedback != null)
-                OnlineFeedback.FireUpdate();
-
-            if (SocketStatusFeedback != null)
-                SocketStatusFeedback.FireUpdate();
+            UpdateFeedbacks();
 
             //if (!args.Client.IsConnected) return;
         }
@@ -183,75 +189,68 @@ namespace PepperDashPluginAcuityFresco
                 joinMap.SetCustomJoinData(customJoins);
             }
 
-            Debug.Console(0, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
-            Debug.Console(0, "Linking to Bridge Type {0}", GetType().Name);
+            Debug.Console(TraceLevel, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
+            Debug.Console(TraceLevel, "Linking to Bridge Type {0}", GetType().Name);
 
             // link joins to bridge
             trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
 
-            LinkScenesToApi(trilist, joinMap);
-            LinkFeedbacksToApi(trilist, joinMap);
+            OnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
+            CommunicationMonitorFeedback.LinkInputSig(trilist.UShortInput[joinMap.CommunicationMonitorStatus.JoinNumber]);
+            if (SocketStatusFeedback != null)
+                SocketStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.SocketStatus.JoinNumber]);
+
+            trilist.SetUShortSigAction(joinMap.SceneSelect.JoinNumber, index => SelectScene(index));
+            SceneSelectFeedback.LinkInputSig(trilist.UShortInput[joinMap.SceneSelect.JoinNumber]);
+
+            var sceneIndex = 0;
+            foreach (var scene in Scenes)
+            {
+                var sceneSelectJoin = (uint)(joinMap.SceneSelectDirect.JoinNumber + sceneIndex);
+                var sceneVisibleJoin = (uint)(joinMap.SceneButtonVisibility.JoinNumber + sceneIndex);
+                var name = scene.Name;
+
+                trilist.SetString(sceneSelectJoin, string.IsNullOrEmpty(name) ? string.Empty : name);
+                trilist.SetBool(sceneVisibleJoin, string.IsNullOrEmpty(name));
+
+                trilist.SetSigTrueAction(sceneSelectJoin, () => SelectScene(sceneIndex));
+                SceneSelectDirectFeebacks[sceneIndex].LinkInputSig(trilist.BooleanInput[sceneSelectJoin]);
+
+                sceneIndex++;
+            }
+
+            UpdateFeedbacks();
 
             trilist.OnlineStatusChange += (device, args) =>
             {
                 if (!args.DeviceOnLine) return;
 
                 trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
-            };
-        }
 
-        private void LinkScenesToApi(BasicTriList trilist, AcuityFrescoBridgeJoinMap joinMap)
-        {
-            trilist.SetUShortSigAction(joinMap.SceneSelect.JoinNumber, value => SelectScene(value));
-            SceneSelectFeedback.LinkInputSig(trilist.UShortInput[joinMap.SceneSelect.JoinNumber]);
-
-            for (var i = 0; i <= Scenes.Count; i++)
-            {
-                var sceneSelectJoin = (uint)(joinMap.SceneSelectDirect.JoinNumber + i);
-                var sceneVisibleJoin = (uint)(joinMap.SceneButtonVisibility.JoinNumber + i);
-                var name = Scenes[i].Name;
-                var id = Scenes[i].Id;
-
-                trilist.SetString(sceneSelectJoin, string.IsNullOrEmpty(name) ? string.Empty : name);
-                trilist.SetBool(sceneVisibleJoin, string.IsNullOrEmpty(name));
-
-                trilist.SetSigTrueAction(sceneSelectJoin, () => SelectScene(id));
-                SceneSelectDirectFeebacks[i].LinkInputSig(trilist.BooleanInput[sceneSelectJoin]);
-            }
-
-            trilist.OnlineStatusChange += (device, args) =>
-            {
-                if (!args.DeviceOnLine) return;
-
-                for (var i = 0; i <= Scenes.Count; i++)
-                {
-                    var sceneSelectJoin = (uint)(joinMap.SceneSelectDirect.JoinNumber + i);
-                    var sceneVisibleJoin = (uint)(joinMap.SceneButtonVisibility.JoinNumber + i);
-                    var name = Scenes[i].Name;
-
-                    trilist.SetString(sceneSelectJoin, string.IsNullOrEmpty(name) ? string.Empty : name);
-                    trilist.SetBool(sceneVisibleJoin, string.IsNullOrEmpty(name));
-                }
-            };
-        }
-
-        private void LinkFeedbacksToApi(BasicTriList trilist, AcuityFrescoBridgeJoinMap joinMap)
-        {
-            OnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
-            CommunicationMonitorFeedback.LinkInputSig(trilist.UShortInput[joinMap.CommunicationMonitorStatus.JoinNumber]);
-            SocketStatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.SocketStatus.JoinNumber]);
-
-            trilist.OnlineStatusChange += (device, args) =>
-            {
-                if (!args.DeviceOnLine) return;
-
-                OnlineFeedback.FireUpdate();
-                CommunicationMonitorFeedback.FireUpdate();
-                SocketStatusFeedback.FireUpdate();
+                UpdateFeedbacks();
             };
         }
 
         #endregion Overrides of EssentialsBridgeableDevice
+
+        private void UpdateFeedbacks()
+        {
+            OnlineFeedback.FireUpdate();
+            CommunicationMonitorFeedback.FireUpdate();
+            if (SocketStatusFeedback != null)
+                SocketStatusFeedback.FireUpdate();
+
+            if (SceneSelectFeedback != null)
+                SceneSelectFeedback.FireUpdate();
+
+            if (SceneSelectDirectFeebacks == null) return;
+
+            foreach (var item in SceneSelectDirectFeebacks)
+            {
+                Debug.Console(VerboseLevel, this, "UpdateFeedbacks SceneSelectDirectFeedbacks-'{0}' Value: {1}", item.Key, item.Value.BoolValue);
+                item.Value.FireUpdate();
+            }
+        }
 
         // commonly used with ASCII based API's with a defined delimiter				
         private void Handle_LineRecieved(object sender, GenericCommMethodReceiveTextArgs args)
@@ -335,6 +334,28 @@ namespace PepperDashPluginAcuityFresco
         }
 
         /// <summary>
+        /// Initializes scene select direct feedback
+        /// </summary>
+        /// <param name="scenes"></param>
+        public void InitializeSceneSelectDirectFeedback(List<AcuityFrescoScene> scenes)
+        {
+            if (scenes == null) return;
+
+            Debug.Console(TraceLevel, this, "InitiliazeSceneSelectDirectFeedback: {0} has {1} scenes configured", Key, scenes.Count);
+
+            foreach (var scene in scenes)
+            {
+                var item = scene;
+                var index = scenes.FindIndex(s => s.Id.Equals(item.Id));
+
+                Debug.Console(VerboseLevel, this, "Scene-{0} Name: {1}, Id: {2}, RoomId: {3}, Level: {4}, IsActive: {5} ",
+                    index, item.Name, item.Id, item.RoomId, item.Level, item.IsActive);
+
+                SceneSelectDirectFeebacks.Add(index, new BoolFeedback(() => item.IsActive));
+            }
+        }
+
+        /// <summary>
         /// Scene select
         /// </summary>
         /// <remarks>
@@ -342,18 +363,24 @@ namespace PepperDashPluginAcuityFresco
         /// '{}' are required params
         /// '[]' are optional params
         /// </remarks>
-        public void SelectScene(uint id)
+        public void SelectScene(int index)
         {
-            var scene = Scenes.FirstOrDefault(s => s.Id.Equals(id));
+            if (index < 0 || index > Scenes.Count) return;
+
+            Debug.Console(VerboseLevel, this, "SelectScene: index-'{0}'", index);
+
+            var scene = Scenes[index];
             if (scene == null)
             {
-                Debug.Console(DebugLevel, this, "SelectScene: invalid id-'{0}'", id);
+                Debug.Console(DebugLevel, this, "SelectScene: invalid scene index-'{0}'", index);
                 return;
             }
-            
+
             var cmd = (string.IsNullOrEmpty(scene.RoomId))
                 ? string.Format("scene {0} {1}", scene.Id, scene.Level)
                 : string.Format("scene {0} {1} {2}", scene.Id, scene.Level, scene.RoomId);
+
+            Debug.Console(VerboseLevel, this, "SelectScene: cmd-'{0}'", cmd);
 
             SendText(cmd);
         }
@@ -368,9 +395,9 @@ namespace PepperDashPluginAcuityFresco
         {
             Debug.Console(TraceLevel, this, new string('*', 80));
             Debug.Console(TraceLevel, this, "Scene List:");
-            for(var i = 0; i <= Scenes.Count; i++)
+            for (var i = 0; i <= Scenes.Count; i++)
             {
-                Debug.Console(TraceLevel, this, "Scene '{0}': Id-'{1}', Level-'{2}', Room Id-'{3}'", i, Scenes[i].Id, Scenes[i].Level, Scenes[i].RoomId);                
+                Debug.Console(TraceLevel, this, "Scene '{0}': Id-'{1}', Level-'{2}', Room Id-'{3}'", i, Scenes[i].Id, Scenes[i].Level, Scenes[i].RoomId);
             }
 
             Debug.Console(TraceLevel, this, new string('*', 80));
@@ -390,9 +417,9 @@ namespace PepperDashPluginAcuityFresco
         public uint DebugLevel = 1;
 
         /// <summary>
-        /// Error Level (2)
+        /// Verbose Level (2)
         /// </summary>        
-        public uint ErrorLevel = 2;
+        public uint VerboseLevel = 2;
 
         private CTimer _debugTimer;
         private bool _debugTimerActive;
@@ -407,7 +434,7 @@ namespace PepperDashPluginAcuityFresco
         {
             TraceLevel = 0;
             DebugLevel = 1;
-            ErrorLevel = 2;
+            VerboseLevel = 2;
 
             if (_debugTimerActive)
                 _debugTimer.Stop();
@@ -429,7 +456,7 @@ namespace PepperDashPluginAcuityFresco
         {
             TraceLevel = level;
             DebugLevel = level;
-            ErrorLevel = level;
+            VerboseLevel = level;
 
             if (_debugTimer == null)
                 _debugTimer = new CTimer(dt => ResetDebugLevels(), 900000); // 900,000 = 15-mins

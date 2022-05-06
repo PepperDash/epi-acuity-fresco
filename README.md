@@ -144,15 +144,17 @@ Update the bridge configuration object as needed for the plugin being developed.
 
 #### Analogs
 
-| an_o (Input/Triggers) | I/O | an_i (Feedback)      |
-| --------------------- | --- | -------------------- |
-| Select Scene by Index | 1   | Scene Index Feedback |
+| an_o (Input/Triggers) | I/O | an_i (Feedback)                       |
+| --------------------- | --- | ------------------------------------- |
+|                       |     | Communication Monitor Status Feedback |
+|                       |     | Socket Status Feedback                |
+| Select Scene by Index | 10  | Scene Index Feedback                  |
 
 #### Serials
 
-| serial-o (Input/Triggers)     | I/O | serial-i (Feedback) |
-| ----------------------------- | --- | ------------------- |
-| Integration ID Set (NOT USED) | 1   |                     |
+| serial-o (Input/Triggers) | I/O | serial-i (Feedback) |
+| ------------------------- | --- | ------------------- |
+|                           | 1   | Device Name         |
 
 ### DEVJSON Commands
 
