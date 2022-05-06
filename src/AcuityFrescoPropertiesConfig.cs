@@ -45,8 +45,20 @@ namespace PepperDashPluginAcuityFresco
     /// <summary>
     /// 
     /// </summary>
-    public class AcuityFrescoScene : LightingScene
+    public class AcuityFrescoScene
     {
+        /// <summary>
+        /// Scene name
+        /// </summary>
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Scene ID usigned integer
+        /// </summary>
+        [JsonProperty("id")]
+        public uint Id { get; set; }
+
         /// <summary>
         /// Room ID used for scene recall
         /// </summary>
@@ -58,5 +70,11 @@ namespace PepperDashPluginAcuityFresco
         /// </summary>
         [JsonProperty("level")]
         public uint Level { get; set; }
+
+        /// <summary>
+        /// Tracks if scene is active
+        /// </summary>
+        [JsonProperty("isActive")]
+        public bool IsActive { get; set; }
     }
 }
