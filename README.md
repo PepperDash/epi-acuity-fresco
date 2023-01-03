@@ -25,6 +25,19 @@ Update the communication settings as needed for the plugin being developed.
 Com
 ```
 
+#### Example API Commands
+
+API Command
+
+```c#
+'scene {sceneId} {level} 0 {roomId}'
+```
+
+`sceneId` valid values are 0-36, `sceneId` 0 represents off
+`level` valid values are 0-100, values < 100 will be applied relative to the current lighting level value
+`roomId` valid values are A-X, `roomId`'s can be concatenated, for example `ABC` is avalid room ID for combined spaces
+
+
 ### Plugin Configuration Object
 
 Update the configuration object as needed for the plugin being developed.
