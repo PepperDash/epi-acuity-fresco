@@ -490,8 +490,8 @@ namespace PepperDashPluginAcuityFresco
 		public void ResetDebugLevels()
 		{
 			TraceLevel = 0;
-			DebugLevel = 0;
-			VerboseLevel = 0;
+			DebugLevel = 1;
+			VerboseLevel = 2;
 		}
 
 		/// <summary>
