@@ -15,7 +15,7 @@ namespace PepperDashPluginAcuityFresco
 	/// </summary>
 	public class AcuityFrescoDevice : EssentialsBridgeableDevice
 	{
-		private const string CommsDelimiter = "\n";
+		private const string CommsDelimiter = "\r";
 		private readonly IBasicCommunication _comms;
 		private readonly GenericCommunicationMonitor _commsMonitor;
 		private GenericQueue _commsRxQueue;
@@ -108,6 +108,8 @@ namespace PepperDashPluginAcuityFresco
 			_commsMonitor = new GenericCommunicationMonitor(this, _comms, config.PollTimeMs, config.WarningTimeoutMs, config.ErrorTimeoutMs, Poll);
 			_commsMonitor.StatusChange += OnCommunicationMonitorStatusChange;
 			_commsRxQueue = new GenericQueue(key + "-queue");
+
+			//DeviceManager.AllDevicesActivated += (sender, args) => Debug.Console(VerboseLevel, this, "All devices activated");
 			
 			OnlineFeedback = _commsMonitor.IsOnlineFeedback;
 			CommunicationMonitorFeedback = new IntFeedback(() => (int)_commsMonitor.Status);
@@ -125,16 +127,15 @@ namespace PepperDashPluginAcuityFresco
 			Debug.Console(TraceLevel, this, "Constructing new {0} instance complete", name);
 			Debug.Console(TraceLevel, new string('*', 80));
 			Debug.Console(TraceLevel, new string('*', 80));
-		}
+		}		
 
 		/// <summary>
 		/// Initialize plugin device
 		/// </summary>
 		public override void Initialize()
 		{
-			// Essentials will handle the connect method to the device                       
+			Debug.Console(VerboseLevel, this, "Initializing {0}", Key);
 			_comms.Connect();
-			// Essentialss will handle starting the comms monitor
 			_commsMonitor.Start();
 		}
 
@@ -282,7 +283,7 @@ namespace PepperDashPluginAcuityFresco
 			var matches = expression.Match(response);
 			if (!matches.Success)
 			{
-				Debug.Console(DebugLevel, this, "ProcessResponse: unknown response '{0}', regex match failed", response);
+				Debug.Console(DebugLevel, this, "ProcessResponse: response '{0}', regex match failed", response.TrimEnd('\r'));
 				return;
 			}
 
@@ -307,6 +308,12 @@ namespace PepperDashPluginAcuityFresco
 		/// </remarks>		
 		public void SendText(string text)
 		{
+			if (_comms.IsConnected == false)
+			{
+				Debug.Console(DebugLevel, this, Debug.ErrorLogLevel.Warning, "SendText: device comms not connected, unable to send text!");
+				return;
+			}
+
 			if (string.IsNullOrEmpty(text)) return;
 
 			var cmd = string.IsNullOrEmpty(CommsDelimiter)
@@ -483,8 +490,8 @@ namespace PepperDashPluginAcuityFresco
 		public void ResetDebugLevels()
 		{
 			TraceLevel = 0;
-			DebugLevel = 1;
-			VerboseLevel = 2;
+			DebugLevel = 0;
+			VerboseLevel = 0;
 		}
 
 		/// <summary>
