@@ -400,11 +400,15 @@ namespace PepperDashPluginAcuityFresco
 		/// </example>
 		public void SelectScene(int index)
 		{
-			if (index < 0 || index > Scenes.Count) return;
+			if (index <= 0 || index > Scenes.Count)
+			{
+				Debug.Console(DebugLevel, this, "SelectScene: index-'{0}' is out of range (valid values 1-{1})", index, Scenes.Count);
+				return;
+			}
 
 			Debug.Console(VerboseLevel, this, "SelectScene: index-'{0}'", index);
 
-			var scene = Scenes[index];
+			var scene = Scenes[index - 1];
 			if (scene == null)
 			{
 				Debug.Console(DebugLevel, this, "SelectScene: invalid scene index-'{0}'", index);
