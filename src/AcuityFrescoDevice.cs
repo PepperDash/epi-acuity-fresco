@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
-using Crestron.SimplSharp;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
+using PepperDash.Essentials.Core.Queues;
 
 
 namespace PepperDashPluginAcuityFresco
@@ -16,6 +18,7 @@ namespace PepperDashPluginAcuityFresco
 		private const string CommsDelimiter = "\n";
 		private readonly IBasicCommunication _comms;
 		private readonly GenericCommunicationMonitor _commsMonitor;
+		private GenericQueue _commsRxQueue;
 
 		/// <summary>
 		/// Communication status monitor
@@ -90,7 +93,7 @@ namespace PepperDashPluginAcuityFresco
 		public AcuityFrescoDevice(string key, string name, AcuityFrescoPropertiesConfig config, IBasicCommunication comms)
 			: base(key, name)
 		{
-			Debug.Console(DebugTrace, this, "Constructing new {0} instance", name);
+			Debug.Console(TraceLevel, this, "Constructing new {0} instance", name);
 
 			ResetDebugLevels();
 
@@ -104,6 +107,7 @@ namespace PepperDashPluginAcuityFresco
 			_comms = comms;
 			_commsMonitor = new GenericCommunicationMonitor(this, _comms, config.PollTimeMs, config.WarningTimeoutMs, config.ErrorTimeoutMs, Poll);
 			_commsMonitor.StatusChange += OnCommunicationMonitorStatusChange;
+			_commsRxQueue = new GenericQueue(key + "-queue");
 			
 			OnlineFeedback = _commsMonitor.IsOnlineFeedback;
 			CommunicationMonitorFeedback = new IntFeedback(() => (int)_commsMonitor.Status);
@@ -118,9 +122,9 @@ namespace PepperDashPluginAcuityFresco
 				SocketStatusFeedback = new IntFeedback(() => (int)socket.ClientStatus);
 			}
 
-			Debug.Console(DebugTrace, this, "Constructing new {0} instance complete", name);
-			Debug.Console(DebugTrace, new string('*', 80));
-			Debug.Console(DebugTrace, new string('*', 80));
+			Debug.Console(TraceLevel, this, "Constructing new {0} instance complete", name);
+			Debug.Console(TraceLevel, new string('*', 80));
+			Debug.Console(TraceLevel, new string('*', 80));
 		}
 
 		/// <summary>
@@ -136,12 +140,12 @@ namespace PepperDashPluginAcuityFresco
 
 		private void OnCommunicationMonitorStatusChange(object sender, MonitorStatusChangeEventArgs args)
 		{
-			Debug.Console(DebugInfo, this, "Communication Status: ({0}) {1}, {2}", args.Status, args.Status.ToString(), args.Message);
+			Debug.Console(DebugLevel, this, "Communication Status: ({0}) {1}, {2}", args.Status, args.Status.ToString(), args.Message);
 		}
 
 		private void OnSocketConnectionChange(object sender, GenericSocketStatusChageEventArgs args)
 		{
-			Debug.Console(DebugInfo, this, "Socket Status: ({0}) {1}", args.Client.ClientStatus, args.Client.ClientStatus.ToString());
+			Debug.Console(DebugLevel, this, "Socket Status: ({0}) {1}", args.Client.ClientStatus, args.Client.ClientStatus.ToString());
 
 			UpdateFeedbacks();
 
@@ -173,8 +177,8 @@ namespace PepperDashPluginAcuityFresco
 				joinMap.SetCustomJoinData(customJoins);
 			}
 
-			Debug.Console(DebugTrace, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
-			Debug.Console(DebugTrace, "Linking to Bridge Type {0}", GetType().Name);
+			Debug.Console(TraceLevel, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
+			Debug.Console(TraceLevel, "Linking to Bridge Type {0}", GetType().Name);
 
 			// link joins to bridge
 			trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
@@ -190,14 +194,15 @@ namespace PepperDashPluginAcuityFresco
 			var sceneIndex = 0;
 			foreach (var scene in Scenes)
 			{
-				var sceneSelectJoin = (uint)(joinMap.SceneSelectDirect.JoinNumber + sceneIndex);
-				var sceneVisibleJoin = (uint)(joinMap.SceneButtonVisibility.JoinNumber + sceneIndex);
+				var index = sceneIndex;
+				var sceneSelectJoin = (uint)(joinMap.SceneSelectDirect.JoinNumber + index);
+				var sceneVisibleJoin = (uint)(joinMap.SceneButtonVisibility.JoinNumber + index);
 				var name = scene.Name;
 
 				trilist.SetString(sceneSelectJoin, string.IsNullOrEmpty(name) ? string.Empty : name);
-				trilist.SetBool(sceneVisibleJoin, string.IsNullOrEmpty(name));
+				trilist.SetBool(sceneVisibleJoin, string.IsNullOrEmpty(name) == false);
 
-				trilist.SetSigTrueAction(sceneSelectJoin, () => SelectScene(sceneIndex));
+				trilist.SetSigTrueAction(sceneSelectJoin, () => SelectScene(index));
 				SceneSelectDirectFeebacks[sceneIndex].LinkInputSig(trilist.BooleanInput[sceneSelectJoin]);
 
 				sceneIndex++;
@@ -231,7 +236,7 @@ namespace PepperDashPluginAcuityFresco
 
 			foreach (var item in SceneSelectDirectFeebacks)
 			{
-				Debug.Console(DebugVerbose, this, "UpdateFeedbacks SceneSelectDirectFeedbacks-'{0}' Value: {1}", item.Key, item.Value.BoolValue);
+				Debug.Console(VerboseLevel, this, "UpdateFeedbacks SceneSelectDirectFeedbacks-'{0}' Value: {1}", item.Key, item.Value.BoolValue);
 				item.Value.FireUpdate();
 			}
 		}
@@ -241,13 +246,55 @@ namespace PepperDashPluginAcuityFresco
 		{
 			if (args == null || string.IsNullOrEmpty(args.Text))
 			{
-				Debug.Console(DebugInfo, this, "Handle_LineReceived args is null or args.Text is null or empty");
+				Debug.Console(DebugLevel, this, "Handle_LineReceived args is null or args.Text is null or empty");
 				return;
 			}
 
-			Debug.Console(DebugInfo, this, "Handle_LineReceived args.Text: {0}", args.Text);
+			Debug.Console(DebugLevel, this, "Handle_LineReceived args.Text: {0}", args.Text);
 
-			// TODO [ ] Process device response
+			try
+			{
+				Debug.Console(DebugLevel, this, "Handle_LineReceived args.Text: {0}", args.Text);
+				_commsRxQueue.Enqueue(new ProcessStringMessage(args.Text, ProcessResponse));
+			}
+			catch(Exception ex) 
+			{
+				Debug.Console(DebugLevel, this, Debug.ErrorLogLevel.Error, "HandleLineReceived Exception Message: {0}", ex.Message);
+				Debug.Console(VerboseLevel, this, Debug.ErrorLogLevel.Error, "HandleLineRecieved Exception Stack Trace: {0}", ex.StackTrace);
+				if (ex.InnerException != null) Debug.Console(DebugLevel, this, Debug.ErrorLogLevel.Error, "HandleLineReceived Inner Exception: '{0}'", ex.InnerException);
+			}
+		}
+
+		// example response
+		// 'scene {sceneId} {level} 0 {roomId}
+		// 'scene 1 100 0 b'
+		// 'scene 2 100 0 ab'
+		// 'scene 0 100 0 abc'
+		private void ProcessResponse(string response)
+		{
+			if (string.IsNullOrEmpty(response))
+			{
+				Debug.Console(VerboseLevel, this, "ProcessResponse: response '{0}' is null or empty", response);
+				return;
+			}
+
+			var expression = new Regex(@"scene (?<sceneId>.*) (?<level>.*) 0 (?<roomId>.*)", RegexOptions.None);
+			var matches = expression.Match(response);
+			if (!matches.Success)
+			{
+				Debug.Console(DebugLevel, this, "ProcessResponse: unknown response '{0}', regex match failed", response);
+				return;
+			}
+
+			var responseSceneId = matches.Groups["sceneId"].Value.ToLower();
+			var responseLevel = matches.Groups["level"].Value;
+			var responseRoomId = matches.Groups["roomId"].Value.ToLower();			
+
+			Debug.Console(VerboseLevel, this, "ProcessResponse: responseSceneId-'{0}', responseLevel-'{1}' responseRoomId-'{2}'", 
+				responseSceneId, responseLevel, responseRoomId);
+
+			// TODO [ ] Add feedback logic 
+
 		}
 
 		/// <summary>
@@ -325,14 +372,14 @@ namespace PepperDashPluginAcuityFresco
 		{
 			if (scenes == null) return;
 
-			Debug.Console(DebugTrace, this, "InitiliazeSceneSelectDirectFeedback: {0} has {1} scenes configured", Key, scenes.Count);
+			Debug.Console(TraceLevel, this, "InitiliazeSceneSelectDirectFeedback: {0} has {1} scenes configured", Key, scenes.Count);
 
 			foreach (var scene in scenes)
 			{
 				var item = scene;
 				var index = scenes.FindIndex(s => s.Id.Equals(item.Id));
 
-				Debug.Console(DebugVerbose, this, "Scene-{0} Name: {1}, Id: {2}, RoomId: {3}, Level: {4}, IsActive: {5} ",
+				Debug.Console(VerboseLevel, this, "Scene-{0} Name: {1}, Id: {2}, RoomId: {3}, Level: {4}, IsActive: {5} ",
 					index, item.Name, item.Id, item.RoomId, item.Level, item.IsActive);
 
 				SceneSelectDirectFeebacks.Add(index, new BoolFeedback(() => item.IsActive));
@@ -355,35 +402,35 @@ namespace PepperDashPluginAcuityFresco
 		{
 			if (index < 0 || index > Scenes.Count) return;
 
-			Debug.Console(DebugVerbose, this, "SelectScene: index-'{0}'", index);
+			Debug.Console(VerboseLevel, this, "SelectScene: index-'{0}'", index);
 
 			var scene = Scenes[index];
 			if (scene == null)
 			{
-				Debug.Console(DebugInfo, this, "SelectScene: invalid scene index-'{0}'", index);
+				Debug.Console(DebugLevel, this, "SelectScene: invalid scene index-'{0}'", index);
 				return;
 			}
 
 			if (scene.Id > 36)
 			{
-				Debug.Console(DebugInfo, this, "SelectScene: scene index-'{0}' sceneId-'{1}' is out of range (valid values 1-36)", index, scene.Id);
+				Debug.Console(DebugLevel, this, "SelectScene: scene index-'{0}' sceneId-'{1}' is out of range (valid values 1-36)", index, scene.Id);
 				return;
 			}
 
 			if (scene.Level > 100)
 			{
-				Debug.Console(DebugInfo, this, "SelectScene: scene index-'{0}' level-'{1}' is out of range (valid values 1-100)", index, scene.Level);
+				Debug.Console(DebugLevel, this, "SelectScene: scene index-'{0}' level-'{1}' is out of range (valid values 1-100)", index, scene.Level);
 				return;
 			}
 
 			if (string.IsNullOrEmpty(scene.RoomId))
 			{
-				Debug.Console(DebugInfo, this, "SelectScene: scene index-'{0}' roomId is null or empty", index);
+				Debug.Console(DebugLevel, this, "SelectScene: scene index-'{0}' roomId is null or empty", index);
 				return;
 			}
 
 			var cmd = string.Format("scene {0} {1} 0 {2}", scene.Id, scene.Level, scene.RoomId);
-			Debug.Console(DebugVerbose, this, "SelectScene: cmd-'{0}'", cmd);
+			Debug.Console(VerboseLevel, this, "SelectScene: cmd-'{0}'", cmd);
 			SendText(cmd);
 		}
 
@@ -395,14 +442,14 @@ namespace PepperDashPluginAcuityFresco
 		/// </example>
 		public void GetScenes()
 		{
-			Debug.Console(DebugTrace, this, new string('*', 80));
-			Debug.Console(DebugTrace, this, "Scene List:");
+			Debug.Console(TraceLevel, this, new string('*', 80));
+			Debug.Console(TraceLevel, this, "Scene List:");
 			for (var i = 0; i <= Scenes.Count; i++)
 			{
-				Debug.Console(DebugTrace, this, "Scene '{0}': Id-'{1}', Level-'{2}', Room Id-'{3}'", i, Scenes[i].Id, Scenes[i].Level, Scenes[i].RoomId);
+				Debug.Console(TraceLevel, this, "Scene '{0}': Id-'{1}', Level-'{2}', Room Id-'{3}'", i, Scenes[i].Id, Scenes[i].Level, Scenes[i].RoomId);
 			}
 
-			Debug.Console(DebugTrace, this, new string('*', 80));
+			Debug.Console(TraceLevel, this, new string('*', 80));
 		}
 
 
@@ -411,17 +458,17 @@ namespace PepperDashPluginAcuityFresco
 		/// <summary>
 		/// Trace level (0)
 		/// </summary>
-		public uint DebugTrace { get; set; }
+		public uint TraceLevel { get; set; }
 
 		/// <summary>
 		/// Debug level (1)
 		/// </summary>
-		public uint DebugInfo { get; set; }
+		public uint DebugLevel { get; set; }
 
 		/// <summary>
 		/// Verbose Level (2)
 		/// </summary>        
-		public uint DebugVerbose { get; set; }
+		public uint VerboseLevel { get; set; }
 
 		/// <summary>
 		/// Resets debug levels for this device instancee
@@ -431,9 +478,9 @@ namespace PepperDashPluginAcuityFresco
 		/// </example>
 		public void ResetDebugLevels()
 		{
-			DebugTrace = 0;
-			DebugInfo = 1;
-			DebugVerbose = 2;
+			TraceLevel = 0;
+			DebugLevel = 1;
+			VerboseLevel = 2;
 		}
 
 		/// <summary>
@@ -445,9 +492,9 @@ namespace PepperDashPluginAcuityFresco
 		/// <param name="level"></param>
 		public void SetDebugLevels(uint level)
 		{
-			DebugTrace = level;
-			DebugInfo = level;
-			DebugVerbose = level;
+			TraceLevel = level;
+			DebugLevel = level;
+			VerboseLevel = level;
 		}
 
 		#endregion
