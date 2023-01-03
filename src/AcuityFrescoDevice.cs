@@ -92,6 +92,8 @@ namespace PepperDashPluginAcuityFresco
 		{
 			Debug.Console(DebugTrace, this, "Constructing new {0} instance", name);
 
+			ResetDebugLevels();
+
 			Scenes = config.Scenes;
 
 			SceneSelectDirectFeebacks = new Dictionary<int, BoolFeedback>();
@@ -102,8 +104,7 @@ namespace PepperDashPluginAcuityFresco
 			_comms = comms;
 			_commsMonitor = new GenericCommunicationMonitor(this, _comms, config.PollTimeMs, config.WarningTimeoutMs, config.ErrorTimeoutMs, Poll);
 			_commsMonitor.StatusChange += OnCommunicationMonitorStatusChange;
-			//DeviceManager.AddDevice(_commsMonitor);
-
+			
 			OnlineFeedback = _commsMonitor.IsOnlineFeedback;
 			CommunicationMonitorFeedback = new IntFeedback(() => (int)_commsMonitor.Status);
 
@@ -123,28 +124,12 @@ namespace PepperDashPluginAcuityFresco
 		}
 
 		/// <summary>
-		/// Use the custom activiate to connect the device and start the comms monitor.
-		/// This method will be called when the device is built.
-		/// </summary>
-		/// <returns></returns>
-		//public override bool CustomActivate()
-		//{
-		//    // Essentials will handle the connect method to the device                       
-		//    _comms.Connect();
-		//    // Essentialss will handle starting the comms monitor
-		//    _commsMonitor.Start();
-
-		//    return base.CustomActivate();
-		//}
-
-		/// <summary>
 		/// Initialize plugin device
 		/// </summary>
 		public override void Initialize()
 		{
 			// Essentials will handle the connect method to the device                       
 			_comms.Connect();
-			_commsMonitor.StatusChange += OnCommunicationMonitorStatusChange;
 			// Essentialss will handle starting the comms monitor
 			_commsMonitor.Start();
 		}
@@ -426,17 +411,17 @@ namespace PepperDashPluginAcuityFresco
 		/// <summary>
 		/// Trace level (0)
 		/// </summary>
-		public uint DebugTrace = 0;
+		public uint DebugTrace { get; set; }
 
 		/// <summary>
 		/// Debug level (1)
 		/// </summary>
-		public uint DebugInfo = 1;
+		public uint DebugInfo { get; set; }
 
 		/// <summary>
 		/// Verbose Level (2)
 		/// </summary>        
-		public uint DebugVerbose = 2;
+		public uint DebugVerbose { get; set; }
 
 		/// <summary>
 		/// Resets debug levels for this device instancee
