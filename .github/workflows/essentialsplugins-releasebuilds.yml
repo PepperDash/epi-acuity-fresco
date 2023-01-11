@@ -77,7 +77,7 @@ jobs:
               Write-Output " ";
               Write-Output "Unable to apply version to AssemblyInfo.cs files";
           }
-      - name: add PepperDash Eng Feed 
+      - name: add PepperDash Feed 
         run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
       - name: restore Nuget Packages
         run: nuget install .\packages.config -OutputDirectory .\packages -ExcludeVersion
