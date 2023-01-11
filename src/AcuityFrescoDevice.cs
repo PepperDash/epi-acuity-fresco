@@ -194,11 +194,13 @@ namespace PepperDashPluginAcuityFresco
 
 			var sceneIndex = 0;
 			foreach (var scene in Scenes)
-			{
-				var index = sceneIndex;
+			{				
+				var index = sceneIndex;				
 				var sceneSelectJoin = (uint)(joinMap.SceneSelectDirect.JoinNumber + index);
 				var sceneVisibleJoin = (uint)(joinMap.SceneButtonVisibility.JoinNumber + index);
 				var name = scene.Name;
+
+				Debug.Console(VerboseLevel, this, "LinkToApi: SceneSelectJoin-'{2}' | SceneVisibleJoin-'{3}' | SceneIndex-'{0}' > '{1}'", index, name, sceneSelectJoin, sceneVisibleJoin);
 
 				trilist.SetString(sceneSelectJoin, string.IsNullOrEmpty(name) ? string.Empty : name);
 				trilist.SetBool(sceneVisibleJoin, string.IsNullOrEmpty(name) == false);
@@ -415,7 +417,7 @@ namespace PepperDashPluginAcuityFresco
 
 			Debug.Console(VerboseLevel, this, "SelectScene: index-'{0}'", index);
 
-			var scene = Scenes[index - 1];
+			var scene = Scenes[index];
 			if (scene == null)
 			{
 				Debug.Console(DebugLevel, this, "SelectScene: invalid scene index-'{0}'", index);
@@ -441,7 +443,7 @@ namespace PepperDashPluginAcuityFresco
 			}
 
 			var cmd = string.Format("scene {0} {1} 0 {2}", scene.Id, scene.Level, scene.RoomId);
-			Debug.Console(VerboseLevel, this, "SelectScene: cmd-'{0}'", cmd);
+			Debug.Console(DebugLevel, this, "SelectScene: index-'{0}' cmd-'{1}'", index, cmd);
 			SendText(cmd);
 		}
 

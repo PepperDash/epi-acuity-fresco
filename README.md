@@ -27,7 +27,7 @@ Com
 
 #### Example API Commands
 
-API Command
+API Command Structure
 
 ```c#
 'scene {sceneId} {level} 0 {roomId}'
@@ -37,6 +37,12 @@ API Command
 `level` valid values are 0-100, values < 100 will be applied relative to the current lighting level value
 `roomId` valid values are A-X, `roomId`'s can be concatenated, for example `ABC` is avalid room ID for combined spaces
 
+Example Command
+
+```c#
+'scene 3 100 0 A' // select scene 3, 100%, in Room with ID 'A'
+'scene 8 50 0 AB' // select scene 8, 50% (relative to current light level), in Rooms with ID 'A' & 'B'
+```
 
 ### Plugin Configuration Object
 
@@ -44,53 +50,53 @@ Update the configuration object as needed for the plugin being developed.
 
 ```json
 {
- "devices": [
-  {
-    "key": "lights-1",
-    "name": "Acuity Fresco Lighting Scenes",
-    "type": "acuityfresco",
-    "group": "pluginDevices",
-    "properties": {
-     "control": {
-      "method": "com",
-      "controlPortDevKey": "processor",
-      "controlPortNumber": 1,
-      "comParams": {
-       "baudRate": 115200,
-       "dataBits": 8,
-       "stopBits": 1,
-       "parity": "None",
-       "protocol": "RS232",
-       "hardwareHandshake": "None",
-       "softwareHandshake": "None"
-      }
-     },
-     "pollTimeMs": 30000,
-     "warningTimeoutMs": 180000,
-     "errorTimeoutMs": 300000,
-     "scenes": [
-      {
-       "name": "Scene 1",
-       "id": 1,
-       "roomId": "A",
-       "level": 100
-      },
-      {
-       "name": "Scene 2",
-       "id": 5,
-       "roomId": "B",
-       "level": 50
-      },
-      {
-       "name": "Scene 3",
-       "id": 36,
-       "roomId": "X",
-       "level": 0
-      }
-     ]
-    }
-   }  
- ]
+    "devices": [
+        {
+            "key": "lights1",
+            "name": "Acuity Fresco Lighting Scenes",
+            "type": "acuityfresco",
+            "group": "pluginDevices",
+            "properties": {
+                "control": {
+                    "method": "com",
+                    "controlPortDevKey": "processor",
+                    "controlPortNumber": 1,
+                    "comParams": {
+                        "baudRate": 115200,
+                        "dataBits": 8,
+                        "stopBits": 1,
+                        "parity": "None",
+                        "protocol": "RS232",
+                        "hardwareHandshake": "None",
+                        "softwareHandshake": "None"
+                    }
+                },
+                "pollTimeMs": 30000,
+                "warningTimeoutMs": 180000,
+                "errorTimeoutMs": 300000,
+                "scenes": [
+                    {
+                        "name": "Scene 1",
+                        "id": 1,
+                        "roomId": "A",
+                        "level": 100
+                    },
+                    {
+                        "name": "Scene 2",
+                        "id": 5,
+                        "roomId": "B",
+                        "level": 50
+                    },
+                    {
+                        "name": "Scene 3",
+                        "id": 36,
+                        "roomId": "X",
+                        "level": 0
+                    }
+                ]
+            }
+        }
+    ]
 }
 ```
 
@@ -100,30 +106,30 @@ Update the bridge configuration object as needed for the plugin being developed.
 
 ```json
 {
- "devices": [
-  {
-    "key": "lights-1-bridge",
-    "uid": 11,
-    "name": "Example Plugin Bridge",
-    "group": "api",
-    "type": "eiscApiAdvanced",
-    "properties": {
-     "control": {
-      "tcpSshProperties": {
-       "address": "127.0.0.2",
-       "port": 0
-      },
-      "ipid": "B1"
-     },
-     "devices": [
-      {
-       "deviceKey": "lights-1",
-       "joinStart": 1
-      }
-     ]
-    }
-   }
- ]
+    "devices": [
+        {
+            "key": "lights1-bridge",
+            "uid": 11,
+            "name": "Example Plugin Bridge",
+            "group": "api",
+            "type": "eiscApiAdvanced",
+            "properties": {
+                "control": {
+                    "tcpSshProperties": {
+                        "address": "127.0.0.2",
+                        "port": 0
+                    },
+                    "ipid": "B1"
+                },
+                "devices": [
+                    {
+                        "deviceKey": "lights1",
+                        "joinStart": 1
+                    }
+                ]
+            }
+        }
+    ]
 }
 ```
 
