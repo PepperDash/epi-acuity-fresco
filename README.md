@@ -352,3 +352,103 @@ devjson:1 {"deviceKey":"lights-1", "methodName":"GetScenes", "params":[]}
 devjson:1 {"deviceKey":"lights-1", "methodName":"ResetDebugLevels", "params":[]}
 devjson:1 {"deviceKey":"lights-1", "methodName":"SetDebugLevels", "params":[{level 0-2}]} 
 ```
+<!-- START Minimum Essentials Framework Versions -->
+### Minimum Essentials Framework Versions
+
+- 1.9.7
+<!-- END Minimum Essentials Framework Versions -->
+<!-- START Config Example -->
+### Config Example
+
+```json
+{
+    "key": "GeneratedKey",
+    "uid": 1,
+    "name": "GeneratedName",
+    "type": "acuityfresco",
+    "group": "Group",
+    "properties": {
+        "control": "SampleValue",
+        "pollTimeMs": 0,
+        "warningTimeoutMs": 0,
+        "errorTimeoutMs": 0,
+        "scenes": [
+            {
+                "name": "SampleString",
+                "id": "SampleValue",
+                "roomId": "SampleString",
+                "level": "SampleValue",
+                "isActive": true
+            }
+        ]
+    }
+}
+```
+<!-- END Config Example -->
+<!-- START Supported Types -->
+### Supported Types
+
+- acuityfresco
+<!-- END Supported Types -->
+<!-- START Join Maps -->
+### Join Maps
+
+#### Digitals
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 1 | R | Device is online feedback |
+| 11 | R | Device direct scene select, feedback, and names |
+| 41 | R | Device scene button visibility feedback |
+
+#### Analogs
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 1 | R | Device communication monitor status feedback |
+| 2 | R | Device socket status feedback |
+| 10 | R | Device scene select by index with feedback |
+
+#### Serials
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 1 | R | Device Name |
+<!-- END Join Maps -->
+<!-- START Interfaces Implemented -->
+
+<!-- END Interfaces Implemented -->
+<!-- START Base Classes -->
+### Base Classes
+
+- JoinMapBaseAdvanced
+- EssentialsBridgeableDevice
+<!-- END Base Classes -->
+<!-- START Public Methods -->
+### Public Methods
+
+- public void SendText(string text)
+- public void Poll()
+- public void Poll(uint index)
+- public void Poll(uint index, string roomId)
+- public void InitializeSceneSelectDirectFeedback(List<AcuityFrescoScene> scenes)
+- public void SelectScene(int index)
+- public void GetScenes()
+- public void ResetDebugLevels()
+- public void SetDebugLevels(uint level)
+<!-- END Public Methods -->
+<!-- START Bool Feedbacks -->
+### Bool Feedbacks
+
+- OnlineFeedback
+<!-- END Bool Feedbacks -->
+<!-- START Int Feedbacks -->
+### Int Feedbacks
+
+- CommunicationMonitorFeedback
+- SocketStatusFeedback
+- SceneSelectFeedback
+<!-- END Int Feedbacks -->
+<!-- START String Feedbacks -->
+
+<!-- END String Feedbacks -->
